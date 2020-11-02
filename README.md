@@ -9,6 +9,7 @@
 
 <br><br><br>
 
+
 This implementation is based on [CUT](https://github.com/taesungp/contrastive-unpaired-translation), thanks Taesung and Junyan for sharing codes.
 
 We provide a PyTorch implementation of non-parallel voice conversion based on patch-wise contrastive learning and adversarial learning. Compared to baseline CycleGAN-VC, CVC only requires one-way GAN training when it comes to non-parallel one-to-one voice conversion, while improving speech quality and reducing training time. 
