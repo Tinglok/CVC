@@ -1,0 +1,341 @@
+import numpy as np
+import os
+import sys
+import ntpath
+import time
+import librosa
+import matplotlib.pyplot as plt
+from . import util, html
+import torch
+from subprocess import Popen, PIPE
+from torch.utils.tensorboard import SummaryWriter
+from data import preprocess
+from data.wav_folder import read_wav, write_wav
+
+if sys.version_info[0] == 2:
+    VisdomExceptionBase = Exception
+else:
+    VisdomExceptionBase = ConnectionError
+
+
+def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
+    """Save images to the disk.
+
+    Parameters:
+        webpage (the HTML class) -- the HTML webpage class that stores these imaegs (see html.py for more details)
+        visuals (OrderedDict)    -- an ordered dictionary that stores (name, images (either tensor or numpy) ) pairs
+        image_path (str)         -- the string is used to create image paths
+        aspect_ratio (float)     -- the aspect ratio of saved images
+        width (int)              -- the images will be resized to width x width
+
+    This function will save images stored in 'visuals' to the HTML file specified by 'webpage'.
+    """
+    image_dir = webpage.get_image_dir()
+    short_path = ntpath.basename(image_path[0])
+    name = os.path.splitext(short_path)[0]
+
+    webpage.add_header(name)
+    ims, txts, links = [], [], []
+
+    for label, im_data in visuals.items():
+        im = util.tensor2im(im_data)
+        image_name = '%s/%s.png' % (label, name)
+        os.makedirs(os.path.join(image_dir, label), exist_ok=True)
+        save_path = os.path.join(image_dir, image_name)
+        util.save_image(im, save_path, aspect_ratio=aspect_ratio)
+        ims.append(image_name)
+        txts.append(label)
+        links.append(image_name)
+    webpage.add_images(ims, txts, links, width=width)
+
+def writer(logs_dir):
+    return SummaryWriter(log_dir=logs_dir, max_queue=5, flush_secs=30)
+
+
+class Visualizer():
+    """This class includes several functions that can display/save images and print/save logging information.
+
+    It uses a Python library 'visdom' for display, and a Python library 'dominate' (wrapped in 'HTML') for creating HTML files with images.
+    """
+
+    def __init__(self, opt):
+        """Initialize the Visualizer class
+
+        Parameters:
+            opt -- stores all the experiment flags; needs to be a subclass of BaseOptions
+        Step 1: Cache the training/test options
+        Step 2: connect to a visdom server
+        Step 3: create an HTML object for saveing HTML filters
+        Step 4: create a logging file to store training losses
+        """
+        self.opt = opt  # cache the option
+        if opt.display_id is None:
+            self.display_id = np.random.randint(100000) * 10  # just a random display id
+        else:
+            self.display_id = opt.display_id
+        self.use_html = opt.isTrain and not opt.no_html
+        self.win_size = opt.display_winsize
+        self.name = opt.name
+        self.port = opt.display_port
+        self.saved = False
+        self.writer = writer(os.path.join(opt.checkpoints_dir, opt.name))
+
+        if self.display_id > 0:  # connect to a visdom server given <display_port> and <display_server>
+            import visdom
+            self.plot_data = {}
+            self.ncols = opt.display_ncols
+            if "tensorboard_base_url" not in os.environ:
+                self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, env=opt.display_env)
+            else:
+                self.vis = visdom.Visdom(port=2004,
+                                         base_url=os.environ['tensorboard_base_url'] + '/visdom')
+            if not self.vis.check_connection():
+                self.create_visdom_connections()
+
+        if self.use_html:  # create an HTML object at <checkpoints_dir>/web/; images will be saved under <checkpoints_dir>/web/images/
+            self.web_dir = os.path.join(opt.checkpoints_dir, opt.name, 'web')
+            self.img_dir = os.path.join(self.web_dir, 'images')
+            print('create web directory %s...' % self.web_dir)
+            util.mkdirs([self.web_dir, self.img_dir])
+        # create a logging file to store training losses
+        self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
+        with open(self.log_name, "a") as log_file:
+            now = time.strftime("%c")
+            log_file.write('================ Training Loss (%s) ================\n' % now)
+
+    def reset(self):
+        """Reset the self.saved status"""
+        self.saved = False
+
+    def create_visdom_connections(self):
+        """If the program could not connect to Visdom server, this function will start a new server at port < self.port > """
+        cmd = sys.executable + ' -m visdom.server -p %d &>/dev/null &' % self.port
+        print('\n\nCould not connect to Visdom server. \n Trying to start a server....')
+        print('Command: %s' % cmd)
+        Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+
+    def display_current_results(self, visuals, epoch, save_result):
+        """Display current results on visdom; save current results to an HTML file.
+
+        Parameters:
+            visuals (OrderedDict) - - dictionary of images to display or save
+            epoch (int) - - the current epoch
+            save_result (bool) - - if save the current results to an HTML file
+        """
+        if self.display_id > 0:  # show images in the browser using visdom
+            ncols = self.ncols
+            if ncols > 0:        # show all the images in one visdom panel
+                ncols = min(ncols, len(visuals))
+                h, w = next(iter(visuals.values())).shape[:2]
+                table_css = """<style>
+                        table {border-collapse: separate; border-spacing: 4px; white-space: nowrap; text-align: center}
+                        table td {width: % dpx; height: % dpx; padding: 4px; outline: 4px solid black}
+                        </style>""" % (w, h)  # create a table css
+                # create a table of images.
+                title = self.name
+                label_html = ''
+                label_html_row = ''
+                images = []
+                idx = 0
+                for label, image in visuals.items():
+                    image_numpy = util.tensor2im(image)
+                    label_html_row += '<td>%s</td>' % label
+                    images.append(image_numpy.transpose([2, 0, 1]))
+                    idx += 1
+                    if idx % ncols == 0:
+                        label_html += '<tr>%s</tr>' % label_html_row
+                        label_html_row = ''
+                white_image = np.ones_like(image_numpy.transpose([2, 0, 1])) * 255
+                while idx % ncols != 0:
+                    images.append(white_image)
+                    label_html_row += '<td></td>'
+                    idx += 1
+                if label_html_row != '':
+                    label_html += '<tr>%s</tr>' % label_html_row
+                try:
+                    self.vis.images(images, ncols, 2, self.display_id + 1,
+                                    None, dict(title=title + ' images'))
+                    label_html = '<table>%s</table>' % label_html
+                    self.vis.text(table_css + label_html, win=self.display_id + 2,
+                                  opts=dict(title=title + ' labels'))
+                except VisdomExceptionBase:
+                    self.create_visdom_connections()
+
+            else:     # show each image in a separate visdom panel;
+                idx = 1
+                try:
+                    for label, image in visuals.items():
+                        image_numpy = util.tensor2im(image)
+                        self.vis.image(
+                            image_numpy.transpose([2, 0, 1]),
+                            self.display_id + idx,
+                            None,
+                            dict(title=label)
+                        )
+                        idx += 1
+                except VisdomExceptionBase:
+                    self.create_visdom_connections()
+
+        if self.use_html and (save_result or not self.saved):  # save images to an HTML file if they haven't been saved.
+            self.saved = True
+            # save images to the disk
+            for label, image in visuals.items():
+                image_numpy = util.tensor2im(image)
+                img_path = os.path.join(self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
+                util.save_image(image_numpy, img_path)
+
+            # update website
+            webpage = html.HTML(self.web_dir, 'Experiment name = %s' % self.name, refresh=0)
+            for n in range(epoch, 0, -1):
+                webpage.add_header('epoch [%d]' % n)
+                ims, txts, links = [], [], []
+
+                for label, image_numpy in visuals.items():
+                    image_numpy = util.tensor2im(image)
+                    img_path = 'epoch%.3d_%s.png' % (n, label)
+                    ims.append(img_path)
+                    txts.append(label)
+                    links.append(img_path)
+                webpage.add_images(ims, txts, links, width=self.win_size)
+            webpage.save()
+
+    def plot_current_losses(self, epoch, counter_ratio, losses):
+        """display the current losses on visdom display: dictionary of error labels and values
+
+        Parameters:
+            epoch (int)           -- current epoch
+            counter_ratio (float) -- progress (percentage) in the current epoch, between 0 to 1
+            losses (OrderedDict)  -- training losses stored in the format of (name, float) pairs
+        """
+        if len(losses) == 0:
+            return
+
+        plot_name = '_'.join(list(losses.keys()))
+
+        if plot_name not in self.plot_data:
+            self.plot_data[plot_name] = {'X': [], 'Y': [], 'legend': list(losses.keys())}
+
+        plot_data = self.plot_data[plot_name]
+        plot_id = list(self.plot_data.keys()).index(plot_name)
+
+        plot_data['X'].append(epoch + counter_ratio)
+        plot_data['Y'].append([losses[k] for k in plot_data['legend']])
+        try:
+            self.vis.line(
+                X=np.stack([np.array(plot_data['X'])] * len(plot_data['legend']), 1),
+                Y=np.array(plot_data['Y']),
+                opts={
+                    'title': self.name,
+                    'legend': plot_data['legend'],
+                    'xlabel': 'epoch',
+                    'ylabel': 'loss'},
+                win=self.display_id - plot_id)
+        except VisdomExceptionBase:
+            self.create_visdom_connections()
+
+    # losses: same format as |losses| of plot_current_losses
+    def print_current_losses(self, epoch, iters, counter_ratio, losses, t_comp, t_data):
+        """print current losses on console; also save the losses to the disk
+
+        Parameters:
+            epoch (int) -- current epoch
+            iters (int) -- current training iteration during this epoch (reset to 0 at the end of every epoch)
+            losses (OrderedDict) -- training losses stored in the format of (name, float) pairs
+            t_comp (float) -- computational time per data point (normalized by batch_size)
+            t_data (float) -- data loading time per data point (normalized by batch_size)
+        """
+        message = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, iters, t_comp, t_data)
+        for k, v in losses.items():
+            if k == 'NCE_List':
+                for layer, nce_loss in enumerate(v):
+                    self.writer.add_scalar(f"{k} Loss_{layer}", nce_loss, epoch + counter_ratio)
+            else:
+                message += '%s: %.3f ' % (k, v)
+                self.writer.add_scalar(f"{k} Loss", v, epoch + counter_ratio)
+
+        print(message)  # print the message
+        with open(self.log_name, "a") as log_file:
+            log_file.write('%s\n' % message)  # save the message
+
+    def plot_current_mel(self, epoch, iters, mel):
+        """print current losses on console; also save the losses to the disk
+
+        Parameters:
+            epoch (int) -- current epoch
+            iters (int) -- current training iteration during this epoch (reset to 0 at the end of every epoch)
+            losses (OrderedDict) -- training losses stored in the format of (name, float) pairs
+            t_comp (float) -- computational time per data point (normalized by batch_size)
+            t_data (float) -- data loading time per data point (normalized by batch_size)
+        """
+        fig = plt.figure(figsize=(10, 4))
+        librosa.display.specshow(mel, y_axis='mel', fmin=80, fmax=7600, x_axis='time')
+        plt.title('Mel-Spectrogram')
+        plt.tight_layout()
+        self.writer.add_figure(f"Mel-{name}", fig, epoch)
+
+    def validation_for_A_dir(self, G, epoch, validation_A_dir, output_A_dir, logf0s_normalization, mcep_normalization):
+        num_mcep = 36
+        sampling_rate = 16000
+        frame_period = 5.0
+        n_frames = 128
+        visualize_audio_limit = 3
+
+        log_f0s_mean_A = logf0s_normalization['mean_A']
+        log_f0s_std_A = logf0s_normalization['std_A']
+        log_f0s_mean_B = logf0s_normalization['mean_B']
+        log_f0s_std_B = logf0s_normalization['std_B']
+
+        coded_sps_A_mean = mcep_normalization['mean_A']
+        coded_sps_A_std = mcep_normalization['std_A']
+        coded_sps_B_mean = mcep_normalization['mean_B']
+        coded_sps_B_std = mcep_normalization['std_B']
+
+        print("Generating validation data B from A...")
+        for i, file in enumerate(sorted(os.listdir(validation_A_dir))):
+            filePath = os.path.join(validation_A_dir, file)
+            wav, _ = read_wav(wav_path=filePath, sr=sampling_rate, mono=True)
+            wav_pad = preprocess.wav_padding(wav=wav,
+                                         sr=sampling_rate,
+                                         frame_period=frame_period,
+                                         multiple=4)
+            f0, timeaxis, sp, ap = preprocess.world_decompose(
+                wav=wav_pad, fs=sampling_rate, frame_period=frame_period)
+            f0_converted = preprocess.pitch_conversion(f0=f0,
+                                                       mean_log_src=log_f0s_mean_A,
+                                                       std_log_src=log_f0s_std_A,
+                                                       mean_log_target=log_f0s_mean_B,
+                                                       std_log_target=log_f0s_std_B)
+            coded_sp = preprocess.world_encode_spectral_envelop(
+                sp=sp, fs=sampling_rate, dim=num_mcep)
+            coded_sp_transposed = coded_sp.T
+            coded_sp_norm = (coded_sp_transposed -
+                             coded_sps_A_mean) / coded_sps_A_std
+            coded_sp_norm = np.array([coded_sp_norm])
+
+            if torch.cuda.is_available():
+                coded_sp_norm = torch.from_numpy(coded_sp_norm).cuda().float()
+            else:
+                coded_sp_norm = torch.from_numpy(coded_sp_norm).float()
+
+            coded_sp_converted_norm = G(coded_sp_norm)
+            coded_sp_converted_norm = coded_sp_converted_norm.cpu().detach().numpy()
+            coded_sp_converted_norm = np.squeeze(coded_sp_converted_norm)
+            coded_sp_converted = coded_sp_converted_norm * \
+                coded_sps_B_std + coded_sps_B_mean
+            coded_sp_converted = coded_sp_converted.T
+            coded_sp_converted = np.ascontiguousarray(coded_sp_converted)
+            decoded_sp_converted = preprocess.world_decode_spectral_envelop(
+                coded_sp=coded_sp_converted, fs=sampling_rate)
+            wav_converted = preprocess.world_speech_synthesis(f0=f0_converted,
+                                                              decoded_sp=decoded_sp_converted,
+                                                              ap=ap,
+                                                              fs=sampling_rate,
+                                                              frame_period=frame_period)
+
+            if not os.path.exists(output_A_dir):
+                os.makedirs(output_A_dir)
+            write_wav(y=wav_converted, wav_path=os.path.join(output_A_dir, os.path.basename(file)), sr=sampling_rate)
+
+            if i < visualize_audio_limit:
+                self.writer.add_audio(f"{file}_Input", wav, epoch, sample_rate=sampling_rate)
+                self.writer.add_audio(f"{file}_Converted", wav_converted, epoch, sample_rate=sampling_rate)
