@@ -49,13 +49,13 @@ where the speaker folder could be any speakers (e.g. p256, and p270).
 
 - Train the CVC model:
 ```bash
-CUDA_VISIBLE_DEVICES=0 python train.py --dataroot ./datasets/voice --name CVC
+python train.py --dataroot ./datasets/voice --name CVC
 ```
 The checkpoints will be stored at `./checkpoints/CVC/`.
 
 - Test the CVC model:
 ```bash
-CUDA_VISIBLE_DEVICES=0 python test.py --dataroot ./datasets/voice --validation_A_dir ./datasets/voice/trainA --output_A_dir ./checkpoints/CVC/converted_sound
+python test.py --dataroot ./datasets/voice --validation_A_dir ./datasets/voice/trainA --output_A_dir ./checkpoints/CVC/converted_sound
 ```
 
 The converted utterance will be saved at `./checkpoints/CVC/converted_sound`.
@@ -66,9 +66,9 @@ The converted utterance will be saved at `./checkpoints/CVC/converted_sound`.
 
 - Train the CycleGAN-VC model:
 ```bash
-CUDA_VISIBLE_DEVICES=0 python train.py --dataroot ./datasets/voice --name CycleGAN --model cycle_gan
+python train.py --dataroot ./datasets/voice --name CycleGAN --model cycle_gan
 ```
 - Test the CycleGAN-VC model:
 ```bash
-CUDA_VISIBLE_DEVICES=0 python test.py --dataroot ./datasets/voice --validation_A_dir ./datasets/voice/trainA --output_A_dir ./checkpoints/CycleGAN/converted_sound --model cycle_gan
+python test.py --dataroot ./datasets/voice --validation_A_dir ./datasets/voice/trainA --output_A_dir ./checkpoints/CycleGAN/converted_sound --model cycle_gan
 ```
