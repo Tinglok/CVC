@@ -45,7 +45,7 @@ unzip VCTK-Corpus.zip
 cp -r ./VCTK-Corpus/wav48/p* ./voice/trainA
 cp -r ./VCTK-Corpus/wav48/p* ./voice/trainB
 ```
-the speaker folder could be any speakers (e.g. p256, and p270).
+where the speaker folder could be any speakers (e.g. p256, and p270).
 
 - Train the CVC model:
 ```bash
