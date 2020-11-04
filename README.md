@@ -2,7 +2,7 @@
 
 # Contrastive Voice Conversion (CVC)
 
-###  [Demo](https://tinglok.netlify.app/files/cvc) |   [Paper](#)
+###  [Demo](https://tinglok.netlify.app/files/cvc) |   [Paper](https://arxiv.org/abs/2011.00782)
 <br>
 
 <img src='figs/CVC.jpg' align="right" width=960>
@@ -39,7 +39,7 @@ cd CVC
 - Download the `VCTK` dataset
 ```bash
 cd dataset
-wget /com_space/zhaohang/VCTK/DS_10283_2651.zip
+wget http://datashare.is.ed.ac.uk/download/DS_10283_2651.zip
 unzip DS_10283_2651.zip
 unzip VCTK-Corpus.zip
 cp -r ./VCTK-Corpus/wav48/p* ./voice/trainA
@@ -60,8 +60,6 @@ python test.py --dataroot ./datasets/voice --validation_A_dir ./datasets/voice/t
 
 The converted utterance will be saved at `./checkpoints/CVC/converted_sound`.
 
-- To view loss plots, run `tensorboard --logdir=./checkpoints/CVC/` and click the URL http://localhost:6006/.
-
 ### Baseline CycleGAN-VC Training and Test
 
 - Train the CycleGAN-VC model:
@@ -72,3 +70,14 @@ python train.py --dataroot ./datasets/voice --name CycleGAN --model cycle_gan
 ```bash
 python test.py --dataroot ./datasets/voice --validation_A_dir ./datasets/voice/trainA --output_A_dir ./checkpoints/CycleGAN/converted_sound --model cycle_gan
 ```
+
+The converted utterance will be saved at `./checkpoints/CycleGAN/converted_sound`.
+
+### Pretrained CVC  Model 
+
+Pretrained model will be released soon.
+
+### TensorBoard Visualization
+
+To view loss plots, run `tensorboard --logdir=./checkpoints` and click the URL http://localhost:6006/.
+
