@@ -32,6 +32,8 @@ cd CVC
   For pip users, please type the command `pip install -r requirements.txt`.
 
   For Conda users,  you can create a new Conda environment using `conda env create -f environment.yaml`.
+  
+- Download pre-trained [Parallel WaveGAN](https://drive.google.com/drive/folders/1qoocM-VQZpjbv5B-zVJpdraazGcPL0So?usp=drive_open) vocoder to `./checkpoints/vocoder`.
 
 
 ### CVC Training and Test
