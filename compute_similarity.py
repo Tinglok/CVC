@@ -3,9 +3,9 @@ import os
 from resemblyzer import preprocess_wav, VoiceEncoder 
 import numpy as np
 
-cvc_dir = '/path/to/cvc_utt/'
-cyclegan_dir = '/path/to/cyclegan_utt/'
-target_dir = '/path/to/tgt_utt/'
+cvc_dir = '/path/to/cvc_utt_path/'
+cyclegan_dir = '/path/to/cyclegan_utt_path/'
+target_dir = '/path/to/tgt_utt_path/'
 
 sampling_rate = 24000
 encoder = VoiceEncoder()

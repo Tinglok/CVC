@@ -20,9 +20,6 @@ if __name__ == '__main__':
     opt.visualizer = visualizer
     total_iters = 0                # the total number of training iterations
 
-    # logf0s_normalization = np.load(opt.logf0s_normalization)        # load pitch feature for voice conversion
-    # mcep_normalization = np.load(opt.mcep_normalization)
-
     optimize_time = 0.1
 
     times = []
@@ -30,7 +27,6 @@ if __name__ == '__main__':
         epoch_start_time = time.time()  # timer for entire epoch
         iter_data_time = time.time()    # timer for data loading per iteration
         epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
-        # visualizer.reset()              # reset the visualizer: make sure it saves the results to HTML at least once every epoch
 
         dataset.set_epoch(epoch)
         for i, data in enumerate(dataset):  # inner loop within one epoch
@@ -52,21 +48,9 @@ if __name__ == '__main__':
             torch.cuda.synchronize()
             optimize_time = (time.time() - optimize_start_time) / batch_size * 0.005 + 0.995 * optimize_time
 
-            # if epoch % opt.display_freq == 0 and i == 0:   # display wavs on tensorboard and save them at disk
-            #     model.eval()
-            #     with torch.no_grad():
-            #         visualizer.validation_for_A_dir(model.get_current_model(), epoch, validation_A_dir=opt.validation_A_dir, output_A_dir=opt.output_A_dir,
-	           #                                      logf0s_normalization=logf0s_normalization, mcep_normalization=mcep_normalization)
-            #     model.train()
-
-            # if total_iters % opt.display_freq and i == 0:
-            #     visualizer.plot_current_mel()
-
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
                 losses = model.get_current_losses()
                 visualizer.print_current_losses(epoch, epoch_iter, float(epoch_iter) / dataset_size, losses, optimize_time, t_data)
-                # if opt.display_id is None or opt.display_id > 0:
-                #     visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
 
             if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
                 print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
