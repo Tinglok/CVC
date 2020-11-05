@@ -6,18 +6,19 @@ from .patchnce import PatchNCELoss
 import util.util as util
 
 
-class CUTModel(BaseModel):
-    """ This class implements CUT and FastCUT model, described in the paper
-    Contrastive Learning for Unpaired Image-to-Image Translation
-    Taesung Park, Alexei A. Efros, Richard Zhang, Jun-Yan Zhu
-    ECCV, 2020
+class CVCModel(BaseModel):
+    """ This class implements CVC model, described in the paper
+    CVC: Contrastive Learning for Voice Conversion
+    Tingle Li, Yichen Liu, Chenxu Hu, Hang Zhao
+    submitted to ICASSP 2021
 
-    The code borrows heavily from the PyTorch implementation of CycleGAN
+    The code borrows heavily from the PyTorch implementation of CycleGAN and CUT
     https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
+    https://github.com/taesungp/contrastive-unpaired-translation
     """
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
-        """  Configures options specific for CUT model
+        """  Configures options specific for CVC model
         """
         parser.add_argument('--CVC_mode', type=str, default="CVC", choices='(CVC, cvc)')
 
@@ -32,17 +33,17 @@ class CUTModel(BaseModel):
         parser.add_argument('--num_patches', type=int, default=256, help='number of patches per layer')
         parser.add_argument('--flip_equivariance',
                             type=util.str2bool, nargs='?', const=True, default=False,
-                            help="Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT")
+                            help="Enforce flip-equivariance as additional regularization. It's used by CUT, but not CVC")
 
-        parser.set_defaults(pool_size=0)  # no image pooling
+        parser.set_defaults(pool_size=0)  # no pooling
 
         opt, _ = parser.parse_known_args()
 
-        # Set default parameters for CUT and FastCUT
-        if opt.CUT_mode.lower() == "cvc":
+        # Set default parameters for CVC
+        if opt.CVC_mode.lower() == "cvc":
             parser.set_defaults(nce_idt=True, lambda_NCE=1.0)
         else:
-            raise ValueError(opt.CUT_mode)
+            raise ValueError(opt.CVC_mode)
 
         return parser
 
@@ -136,17 +137,13 @@ class CUTModel(BaseModel):
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
-        # self.real = torch.cat((self.real_A, self.real_B), dim=0) if self.opt.nce_idt else self.real_A
         if self.opt.flip_equivariance:
             self.flipped_for_equivariance = self.opt.isTrain and (np.random.random() < 0.5)
             if self.flipped_for_equivariance:
                 self.real_A = torch.flip(self.real_A, [3])
                 self.real_B = torch.flip(self.real_B, [3])
-        # self.fake = self.netG(self.real)
         self.fake_B = self.netG(self.real_A)
-        # self.fake_B = self.fake[:self.real_A.size(0)]
         if self.opt.nce_idt:
-            # self.idt_B = self.fake[self.real_A.size(0):]
             self.idt_B = self.netG(self.real_B)
 
     def backward_D(self):
