@@ -27,7 +27,7 @@ class BaseOptions():
         parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         parser.add_argument('--easy_label', type=str, default='experiment_name', help='Interpretable name')
         parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
-        parser.add_argument('--checkpoints_dir', type=str, default='/com_space/zhaohang/CUT/checkpoints', help='models are saved here')
+        parser.add_argument('--checkpoints_dir', type=str, default='/path/to/CVC/checkpoints', help='models are saved here')
         # model parameters
         parser.add_argument('--model', type=str, default='cvc', help='chooses which model to use.')
         parser.add_argument('--input_nc', type=int, default=1, help='# of input image channels: 3 for RGB and 1 for grayscale')
@@ -62,17 +62,11 @@ class BaseOptions():
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
         parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{netG}_size{load_size}')
 
-        # parser.add_argument('--logf0s_normalization', type=str, help="Cached location for log f0s normalized", default='/home/zhaohang/CUT/checkpoints/voice_CUT/logf0s_normalization.npz')
-        # parser.add_argument('--mcep_normalization', type=str, help="Cached location for mcep normalization", default='/home/zhaohang/CUT/checkpoints/voice_CUT/mcep_normalization.npz')
-        parser.add_argument('--validation_A_dir', type=str, help="validation set for sound source A", default='/home/zhaohang/CUT/datasets/voice/trainA/')
-        parser.add_argument('--output_A_dir', type=str, help="output for converted Sound Source A", default='/home/zhaohang/CUT/checkpoints/voice_CUT/converted_sound/')
-        parser.add_argument('--vocoder_dir', type=str, help="checkpoint location for vocoder", default='/home/zhaohang/ParallelWaveGAN/pretrain_model/VCTK/checkpoint-1000000steps.pkl')
+        parser.add_argument('--validation_A_dir', type=str, help="validation set for sound source A", default='/path/to/datasets/voice/trainA/')
+        parser.add_argument('--output_A_dir', type=str, help="output for converted Sound Source A", default='/path/to/checkpoints/CVC/converted_sound/')
+        parser.add_argument('--vocoder_dir', type=str, help="checkpoint location for vocoder", default='/path/to/checkpoints/vocoder/checkpoint-1000000steps.pkl')
         parser.add_argument("--config", default=None, type=str, help="yaml format configuration file. if not explicitly provided, it will be searched in the checkpoint directory. (default=None)")
-        parser.add_argument("--stats", default='/home/zhaohang/ParallelWaveGAN/pretrain_model/VCTK/stats.h5', type=str, help="statistics file.")
-        # parser.add_argument('--coded_sps_A_norm', type=str, help="mcep norm for data A", default='/home/zhaohang/CUT/checkpoints/voice_CUT/coded_sps_A_norm.pickle')
-        # parser.add_argument('--coded_sps_B_norm', type=str, help="mcep norm for data B", default='/home/zhaohang/CUT/checkpoints/voice_CUT/coded_sps_B_norm.pickle')
-        # parser.add_argument('--logf0s_normalization', type=str, help="Cached location for log f0s normalized", default='/home/zhaohang/CUT/checkpoints/voice_CUT/logf0s_normalization.npz')
-        
+        parser.add_argument("--stats", default='/path/to/checkpoints/vocoder/stats.h5', type=str, help="statistics file.")
 
         self.initialized = True
         return parser
