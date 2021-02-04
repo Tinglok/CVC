@@ -83,3 +83,13 @@ Pretrained model will be released soon.
 
 To view loss plots, run `tensorboard --logdir=./checkpoints` and click the URL http://localhost:6006/.
 
+### Citation
+
+```bash
+@article{li2020cvc,
+  title={CVC: Contrastive Learning for Non-parallel Voice Conversion},
+  author={Li, Tingle and Liu, Yichen and Hu, Chenxu and Zhao, Hang},
+  journal={arXiv preprint arXiv:2011.00782},
+  year={2020}
+}
+```
