@@ -2,13 +2,12 @@
 
 # Contrastive Voice Conversion (CVC)
 
-###  [Demo](https://tinglok.netlify.app/files/cvc) |   [Paper](https://arxiv.org/abs/2011.00782)
+###  [Video (3m)](https://youtu.be/bIxrmISaqbQ) |   [Website](https://tinglok.netlify.app/files/cvc) |   [Paper](https://arxiv.org/abs/2011.00782)
 <br>
 
 <img src='figs/CVC.jpg' align="right" width=960>
 
-<br><br><br>
-
+<br><br><br><br>
 
 This implementation is based on [CUT](https://github.com/taesungp/contrastive-unpaired-translation), thanks Taesung and Junyan for sharing codes.
 
