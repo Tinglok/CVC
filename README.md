@@ -87,10 +87,11 @@ To view loss plots, run `tensorboard --logdir=./checkpoints` and click the URL h
 If you use this code for your research, please cite our [paper](https://arxiv.org/abs/2011.00782).
 
 ```bash
-@inproceedings{li2020cvc,
-  author={Li, Tingle and Liu, Yichen and Hu, Chenxu and Zhao, Hang},
-  title={CVC: Contrastive Learning for Non-parallel Voice Conversion},
+@inproceedings{li21d_interspeech,
+  author={Tingle Li and Yichen Liu and Chenxu Hu and Hang Zhao},
+  title={{CVC: Contrastive Learning for Non-Parallel Voice Conversion}},
   year=2021,
-  booktitle={Proc. Interspeech}
+  booktitle={Proc. Interspeech 2021},
+  pages={1324--1328}
 }
 ```
