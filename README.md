@@ -74,9 +74,9 @@ python test.py --dataroot ./datasets/voice --validation_A_dir ./datasets/voice/t
 
 The converted utterance will be saved at `./checkpoints/CycleGAN/converted_sound`.
 
-### Pretrained CVC  Model 
+### Pre-trained CVC  Model 
 
-Pretrained model will be released soon.
+Pre-trained models on p270-to-p256 and many-to-p249 are avaliable with this [URL](https://drive.google.com/drive/folders/1B21i1FoHQaK3KZ9CDjyUK4qDZdj4VfiR?usp=sharing).
 
 ### TensorBoard Visualization
 
