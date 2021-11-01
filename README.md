@@ -76,7 +76,7 @@ The converted utterance will be saved at `./checkpoints/CycleGAN/converted_sound
 
 ### Pre-trained CVC  Model 
 
-Pre-trained models on p270-to-p256 and many-to-p249 are avaliable in this [URL](https://drive.google.com/drive/folders/1B21i1FoHQaK3KZ9CDjyUK4qDZdj4VfiR?usp=sharing).
+Pre-trained models on p270-to-p256 and many-to-p249 are avaliable at this [URL](https://drive.google.com/drive/folders/1B21i1FoHQaK3KZ9CDjyUK4qDZdj4VfiR?usp=sharing).
 
 ### TensorBoard Visualization
 
