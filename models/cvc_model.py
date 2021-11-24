@@ -10,7 +10,7 @@ class CVCModel(BaseModel):
     """ This class implements CVC model, described in the paper
     CVC: Contrastive Learning for Voice Conversion
     Tingle Li, Yichen Liu, Chenxu Hu, Hang Zhao
-    submitted to ICASSP 2021
+    Interspeech 2021
 
     The code borrows heavily from the PyTorch implementation of CycleGAN and CUT
     https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
