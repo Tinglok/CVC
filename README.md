@@ -5,7 +5,7 @@
 ###  [Video (3m)](https://youtu.be/bIxrmISaqbQ) |   [Website](https://tinglok.netlify.app/files/cvc) |   [Paper](https://arxiv.org/abs/2011.00782)
 <br>
 
-<img src='figs/CVC.jpg' align="right" width=960>
+<img src='figs/CVC.jpg' align="center" width=800>
 
 <br><br><br><br>
 
