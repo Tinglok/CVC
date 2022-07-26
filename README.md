@@ -7,7 +7,7 @@
 
 <img src='figs/CVC.jpg' align="center" width=800>
 
-<br><br><br><br>
+<br><br>
 
 This implementation is based on [CUT](https://github.com/taesungp/contrastive-unpaired-translation), thanks Taesung and Junyan for sharing codes.
 
